@@ -3,7 +3,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Net;
 
-namespace ArticlesAPI.Controllers
+namespace WebsiteAPIs.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

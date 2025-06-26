@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Text.Json.Serialization;
 
-namespace ArticlesAPI
+namespace WebsiteAPIs
 {
     public class Article
     {

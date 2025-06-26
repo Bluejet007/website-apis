@@ -2,7 +2,7 @@ using Azure.Storage.Blobs;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Azure;
 
-namespace ArticlesAPI
+namespace WebsiteAPIs
 {
     public class Program
     {
@@ -18,7 +18,8 @@ namespace ArticlesAPI
             builder.Services.AddSwaggerGen();
             builder.Services.AddAzureClients(clBuilder =>
             {
-                clBuilder.AddBlobServiceClient(builder.Configuration.GetValue<String>("Blobs:connectionString"));
+                clBuilder.AddBlobServiceClient(builder.Configuration.GetValue<String>("Storage:connectionString"));
+                clBuilder.AddQueueServiceClient(builder.Configuration.GetValue<String>("Storage:connectionString"));
                 clBuilder.AddClient((CosmosClientOptions op) => new CosmosClient(builder.Configuration.GetValue<String>("Cosmos:connectionString")));
             });
 
