@@ -1,4 +1,3 @@
-using Azure.Storage.Blobs;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Azure;
 

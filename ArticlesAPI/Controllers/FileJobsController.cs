@@ -108,19 +108,14 @@ namespace WebsiteAPIs.Controllers
                 errorMessage = "No file provided.";
                 return false;
             }
-            else if (String.IsNullOrEmpty(job.JobType)) // Check if job type provided
-            {
-                errorMessage = "No job type provided.";
-                return false;
-            }
             else if (!supportedFileTypes.Contains(Path.GetExtension(job.File.ContentType))) // Check if file is supported
             {
                 errorMessage = "File is not a supported image.";
                 return false;
             }
-            else if (!supportedJobTypes.Contains(job.JobType)) // Check if job type is valid
+            else if (job.File.Length > 25 * 1024 * 1024) // Check is file size is greater than 25MB
             {
-                errorMessage = "Job type is not valid.";
+                errorMessage = "File size is too large (> 25MB).";
                 return false;
             }
             else // Return as valid

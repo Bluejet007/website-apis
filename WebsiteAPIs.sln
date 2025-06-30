@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36203.30
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebsiteAPIs", "ArticlesAPI\WebsiteAPIs.csproj", "{B5427E48-DB74-4544-A319-85B361FDEE5F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageFilters", "ImageFilters\ImageFilters.csproj", "{E60457C1-88B9-4C7F-A209-A3558ABAC7A4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{B5427E48-DB74-4544-A319-85B361FDEE5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5427E48-DB74-4544-A319-85B361FDEE5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5427E48-DB74-4544-A319-85B361FDEE5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E60457C1-88B9-4C7F-A209-A3558ABAC7A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E60457C1-88B9-4C7F-A209-A3558ABAC7A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E60457C1-88B9-4C7F-A209-A3558ABAC7A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E60457C1-88B9-4C7F-A209-A3558ABAC7A4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
