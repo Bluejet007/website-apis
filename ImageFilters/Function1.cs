@@ -1,8 +1,6 @@
-using System.Drawing;
-using System.Text.Json;
-using Azure.Storage.Queues.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace ImageFilters;
 
@@ -17,14 +15,19 @@ public class Function1
 
     [Function(nameof(Function1))]
     [BlobOutput("outputs/{fileName}")]
-    public async Task<byte[]> Run([QueueTrigger("image-jobs", Connection = "AzureWebJobsStorage")] string message, [BlobInput("inputs/{fileName}")] Stream inputStream)
+    public byte[] Run([QueueTrigger("image-jobs", Connection = "AzureWebJobsStorage")] string message, [BlobInput("inputs/{fileName}")] Stream inputStream)
     {
-        _logger.LogInformation("C# Queue trigger function processed: {messageText}", message);
+        _logger.LogInformation($"C# Queue trigger function processed: {message}");
         QueuedJob job = JsonSerializer.Deserialize<QueuedJob>(message)!;
 
-        byte[] output = new byte[inputStream.Length];
-        await inputStream.ReadAsync(output, 0, output.Length);
+        _logger.LogInformation("Converting to bytes");
+        ByteImage byteImage = new ByteImage(inputStream);
+        _logger.LogInformation("Conversion completed");
 
-        return output;
+        _logger.LogInformation("Converting to stream");
+        MemoryStream outputStream = byteImage.ToMemoryStream();
+        _logger.LogInformation("Conversion completed");
+
+        return outputStream.ToArray();
     }
 }
