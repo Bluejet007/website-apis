@@ -1,4 +1,4 @@
 ﻿namespace ImageFilters
 {
-    public enum JobType { baseKuwa };
+    public enum JobType { greyscale, baseKuwa };
 }
