@@ -22,6 +22,21 @@ namespace ImageFilters.Common
 
             return linearRgbMap;
         }
+        public static byte[,] GammaToLinear(byte[,] gammaMap)
+        {
+            byte[,] linearMap = new byte[gammaMap.GetLength(0), gammaMap.GetLength(1)];
+
+            for (int i = gammaMap.GetLowerBound(0); i < gammaMap.GetUpperBound(0) + 1; i++)
+            {
+                Parallel.For(gammaMap.GetLowerBound(1), gammaMap.GetUpperBound(1) + 1, (j) =>
+                {
+                    float value = gammaMap[i, j] / 255f;
+                    linearMap[i, j] = (byte)(MathF.Pow(value, 2.2f) * 255);
+                });
+            }
+
+            return linearMap;
+        }
 
         public static ByteImage LinearToSrgb(ByteImage linearRgbMap)
         {
@@ -42,6 +57,22 @@ namespace ImageFilters.Common
             return srgbMap;
         }
 
+        public static byte[,] LinearToGamma(byte[,] linearMap)
+        {
+            byte[,] gammaMap = new byte[linearMap.GetLength(0), linearMap.GetLength(1)];
+
+            for (int i = linearMap.GetLowerBound(0); i < linearMap.GetUpperBound(0) + 1; i++)
+            {
+                Parallel.For(linearMap.GetLowerBound(1), linearMap.GetUpperBound(1) + 1, (j) =>
+                {
+                    float value = linearMap[i, j] / 255f;
+                    gammaMap[i, j] = (byte)(MathF.Pow(value, 1 / 2.2f) * 255);
+                });
+            }
+
+            return gammaMap;
+        }
+
         public static ByteImage GreyScale(ByteImage rgbMap)
         {
             ByteImage linearMap = SrgbToLinear(rgbMap);
@@ -57,6 +88,20 @@ namespace ImageFilters.Common
             }
 
             return LinearToSrgb(valueMap);
+        }
+
+        public static byte[,] SimpleGreyScale(ByteImage rgbMap)
+        {
+            ByteImage linearMap = SrgbToLinear(rgbMap);
+            byte[,] valueMap = new byte[linearMap.Height, linearMap.Width];
+
+            for (int i = linearMap.PixelMap.GetLowerBound(0); i < linearMap.PixelMap.GetUpperBound(0) + 1; i++)
+            {
+                Parallel.For(linearMap.PixelMap.GetLowerBound(1), linearMap.PixelMap.GetUpperBound(1) + 1, (j) =>
+                    valueMap[i, j] = (byte)((linearMap.PixelMap[i, j, 2] * 54 + linearMap.PixelMap[i, j, 1] * 182 + linearMap.PixelMap[i, j, 0] * 19) / 255));
+            }
+
+            return LinearToGamma(valueMap);
         }
     }
 }
