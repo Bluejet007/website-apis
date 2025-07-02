@@ -10,7 +10,7 @@ namespace ImageFilters
         [JsonPropertyName("jobType")]
         public required JobType JobType { get; set; }
 
-        [JsonPropertyName("parametres")]
-        public string[]? Parametres { get; set; }
+        [JsonPropertyName("parameters")]
+        public string[]? Parameters { get; set; }
     }
 }
