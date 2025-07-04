@@ -6,12 +6,12 @@ namespace ImageFilters
 {
     public class ByteImage
     {
-        public byte[,,] PixelMap { get; set; }
+        public byte[,,] Pixels { get; set; }
         public PixelFormat Format { get; }
         public ImageFormat Type { get; }
-        public int Height { get { return PixelMap.GetLength(0); } }
-        public int Width { get { return PixelMap.GetLength(1); } }
-        public int ChannelCount { get { return PixelMap.GetLength(2); } }
+        public int Height { get { return Pixels.GetLength(0); } }
+        public int Width { get { return Pixels.GetLength(1); } }
+        public int ChannelCount { get { return Pixels.GetLength(2); } }
         public bool IsAlpha
         {
             get
@@ -30,6 +30,20 @@ namespace ImageFilters
             }
         }
 
+        public ByteImage(ByteImage original, bool copyData = true)
+        {
+            this.Format = original.Format;
+            this.Type = original.Type;
+            this.Pixels = copyData ? (byte[,,])original.Pixels.Clone() : new byte[original.Height, original.Width, original.ChannelCount];
+        }
+
+        public ByteImage(int height, int width, ImageFormat type, PixelFormat format = PixelFormat.Format24bppRgb)
+        {
+            this.Format = format;
+            this.Type = type;
+            this.Pixels = new byte[height, width, GetChannelCountFromFormat(format)];
+        }
+
         public ByteImage(Stream stream)
         {
             Bitmap bmp = new Bitmap(stream);
@@ -45,31 +59,29 @@ namespace ImageFilters
             Marshal.Copy(bmpData.Scan0, input, 0, byteCount);
             bmp.UnlockBits(bmpData);
 
-            this.PixelMap = new byte[bmp.Height, bmp.Width, bpp];
-            ParallelOptions parallelOptions = new ParallelOptions();
+            this.Pixels = new byte[bmp.Height, bmp.Width, bpp];
 
-            for (int y = PixelMap.GetLowerBound(0); y < PixelMap.GetUpperBound(0) + 1; y++)
+            for (int y = Pixels.GetLowerBound(0); y < Pixels.GetUpperBound(0) + 1; y++)
             {
-                Parallel.For(PixelMap.GetLowerBound(1), PixelMap.GetUpperBound(1) + 1, parallelOptions, (x) =>
+                Parallel.For(Pixels.GetLowerBound(1), Pixels.GetUpperBound(1) + 1, (x) =>
                 {
-                    for (int z = PixelMap.GetLowerBound(2); z < PixelMap.GetUpperBound(2) + 1; z++)
-                        this.PixelMap[y, x, z] = input[bmpData.Stride * y + x * bpp + (bpp - z - 1)];
+                    for (int z = Pixels.GetLowerBound(2); z < Pixels.GetUpperBound(2) + 1; z++)
+                        this.Pixels[y, x, z] = input[bmpData.Stride * y + x * bpp + (bpp - z - 1)];
                 });
             }
         }
 
-        public ByteImage(ByteImage original, bool copyData = true)
-        {
-            this.Format = original.Format;
-            this.Type = original.Type;
-            this.PixelMap = copyData ? (byte[,,])original.PixelMap.Clone() : new byte[original.Height, original.Width, original.ChannelCount];
-        }
-
-        public ByteImage(int height, int width, ImageFormat type, PixelFormat format = PixelFormat.Format24bppRgb)
+        public ByteImage(byte[,] greyImage, ImageFormat type, PixelFormat format = PixelFormat.Format24bppRgb)
         {
             this.Format = format;
             this.Type = type;
-            this.PixelMap = new byte[height, width, GetChannelCountFromFormat(format)];
+            this.Pixels = new byte[greyImage.GetLength(0), greyImage.GetLength(1), GetChannelCountFromFormat(format)];
+
+            for (int y = Pixels.GetLowerBound(0); y < Pixels.GetUpperBound(0) + 1; y++)
+            {
+                Parallel.For(Pixels.GetLowerBound(1), Pixels.GetUpperBound(1) + 1, (x) =>
+                    Pixels[y, x, 0] = Pixels[y, x, 1] = Pixels[y, x, 2] = greyImage[y, x]);
+            }
         }
 
         public MemoryStream ToMemoryStream()
@@ -78,12 +90,12 @@ namespace ImageFilters
 
             int stride = 4 * ((this.Width * ChannelCount + 3) / 4);
             byte[] output = new byte[Height * stride];
-            for (int y = PixelMap.GetLowerBound(0); y < PixelMap.GetUpperBound(0) + 1; y++)
+            for (int y = Pixels.GetLowerBound(0); y < Pixels.GetUpperBound(0) + 1; y++)
             {
-                Parallel.For(PixelMap.GetLowerBound(1), PixelMap.GetUpperBound(1) + 1, (x) =>
+                Parallel.For(Pixels.GetLowerBound(1), Pixels.GetUpperBound(1) + 1, (x) =>
                 {
-                    for (int z = PixelMap.GetLowerBound(2); z < PixelMap.GetUpperBound(2) + 1; z++)
-                        output[y * stride + x * this.ChannelCount + (this.ChannelCount - z - 1)] = PixelMap[y, x, z];
+                    for (int z = Pixels.GetLowerBound(2); z < Pixels.GetUpperBound(2) + 1; z++)
+                        output[y * stride + x * this.ChannelCount + (this.ChannelCount - z - 1)] = Pixels[y, x, z];
                 });
             }
 
@@ -93,7 +105,7 @@ namespace ImageFilters
             Marshal.Copy(output, 0, bmpData.Scan0, output.Length);
             bmp.UnlockBits(bmpData);
 
-            MemoryStream stream = new MemoryStream();
+            MemoryStream stream = new();
             bmp.Save(stream, this.Type);
 
             return stream;
@@ -103,10 +115,10 @@ namespace ImageFilters
         {
             byte[,] channel = new byte[this.Height, this.Width];
 
-            for (int i = PixelMap.GetLowerBound(0); i < PixelMap.GetUpperBound(0) + 1; i++)
+            for (int i = Pixels.GetLowerBound(0); i < Pixels.GetUpperBound(0) + 1; i++)
             {
-                Parallel.For(PixelMap.GetLowerBound(1), PixelMap.GetUpperBound(1) + 1, (j) =>
-                    channel[i, j] = PixelMap[i, j, channelIndex]);
+                Parallel.For(Pixels.GetLowerBound(1), Pixels.GetUpperBound(1) + 1, (j) =>
+                    channel[i, j] = Pixels[i, j, channelIndex]);
             }
 
             return channel;

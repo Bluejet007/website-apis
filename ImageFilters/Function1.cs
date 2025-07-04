@@ -1,7 +1,6 @@
 using ImageFilters.Common;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
 
 namespace ImageFilters;
 
@@ -25,11 +24,13 @@ public class Function1
         _logger.LogInformation("Conversion completed");
 
         _logger.LogInformation("Processing image");
+        byteImage = ColourSpace.SrgbToLinear(byteImage);
         ByteImage outputImage = job.JobType switch
         {
             JobType.greyscale => CommonFilters.GreyScale(byteImage),
             _ => byteImage
         };
+        outputImage = ColourSpace.LinearToSrgb(outputImage);
         _logger.LogInformation("Processing completed");
 
         _logger.LogInformation("Converting to stream");
