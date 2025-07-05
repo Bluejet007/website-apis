@@ -47,7 +47,7 @@ namespace ImageFilters
         {
             if (x < T.Zero)
             {
-                x -= x + T.One;
+                x -= T.CreateChecked(2) * x + T.One;
             }
             else if (x.CompareTo(max) >= 0)
             {

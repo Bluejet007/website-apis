@@ -11,6 +11,6 @@ namespace ImageFilters
         public required JobType JobType { get; set; }
 
         [JsonPropertyName("parameters")]
-        public string[]? Parameters { get; set; }
+        public int[]? Parameters { get; set; }
     }
 }
