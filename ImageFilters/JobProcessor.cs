@@ -1,19 +1,20 @@
 using ImageFilters.Common;
+using ImageFilters.Kuwahara;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
 namespace ImageFilters;
 
-public class Function1
+public class JobProcessor
 {
-    private readonly ILogger<Function1> _logger;
+    private readonly ILogger<JobProcessor> _logger;
 
-    public Function1(ILogger<Function1> logger)
+    public JobProcessor(ILogger<JobProcessor> logger)
     {
         _logger = logger;
     }
 
-    [Function(nameof(Function1))]
+    [Function(nameof(JobProcessor))]
     [BlobOutput("outputs/{fileName}")]
     public byte[] Run([QueueTrigger("image-jobs", Connection = "AzureWebJobsStorage")] QueuedJob job, [BlobInput("inputs/{fileName}")] Stream inputStream)
     {
@@ -28,6 +29,7 @@ public class Function1
         ByteImage outputImage = job.JobType switch
         {
             JobType.greyscale => CommonFilters.GreyScale(byteImage),
+            JobType.baseKuwa => KuwaharaFilters.BaseKuwahara(byteImage, (byte)job.Parameters![0], _logger),
             _ => byteImage
         };
         outputImage = ColourSpace.LinearToSrgb(outputImage);
