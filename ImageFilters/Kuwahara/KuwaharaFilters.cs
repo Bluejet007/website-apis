@@ -83,7 +83,7 @@ namespace ImageFilters.Kuwahara
 
                     for (byte k = 0; k < linResImage.ChannelCount; k++)
                     {
-                        uint sum = GetQuadrantSum(linRgbImage, i, j, k, subKernelSize);
+                        uint sum = GetQuadrantSum(linRgbImage, i + quads[ind], j + quads[ind + 1], k, subKernelSize);
                         linResImage.Pixels[i, j, k] = (byte)(sum / (subKernelSize * subKernelSize));
                     }
                 });
