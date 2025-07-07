@@ -24,4 +24,7 @@
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.11.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.1" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JobLibrary\JobLibrary.csproj" />
+  </ItemGroup>
 </Project>

@@ -18,7 +18,7 @@ namespace WebsiteAPIs.Controllers
         public FileJobsController(BlobServiceClient client)
         {
             this.inputContainerClient = client.GetBlobContainerClient("inputs");
-            this.outputContainerClient = client.GetBlobContainerClient("inputs");
+            this.outputContainerClient = client.GetBlobContainerClient("outputs");
         }
 
         [HttpGet("{id}")]
@@ -30,6 +30,12 @@ namespace WebsiteAPIs.Controllers
             if (ValidateGetRequest(id, out string errorMessage))
             {
                 return this.ValidationProblem(errorMessage);
+            }
+
+            // Check if output file is ready
+            if (!outputContainerClient.GetBlockBlobClient(id).Exists())
+            {
+                return this.Accepted();
             }
 
             // Get blob
@@ -65,11 +71,6 @@ namespace WebsiteAPIs.Controllers
                 errorMessage = "Id is not a supported image.";
                 return false;
             }
-            else if (outputContainerClient.GetBlockBlobClient(id).Exists()) // Check if id exists
-            {
-                errorMessage = "Id doesn't exist.";
-                return false;
-            }
             else // Return as valid
             {
                 errorMessage = "";
@@ -88,7 +89,7 @@ namespace WebsiteAPIs.Controllers
             }
 
             // Create blob
-            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(job.File.FileName);
+            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(job.File!.FileName);
             await inputContainerClient.CreateIfNotExistsAsync();
             BlobClient blobClient = inputContainerClient.GetBlobClient(fileName);
 
@@ -100,7 +101,7 @@ namespace WebsiteAPIs.Controllers
             return this.Ok(new {id = fileName});
         }
 
-        // Validate get request
+        // Validate post request
         bool ValidatePostRequest(FileJob job, out string errorMessage)
         {
             if (job.File == null || job.File.Length == 0) // Check if file provided

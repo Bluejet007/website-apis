@@ -1,4 +1,6 @@
-﻿namespace WebsiteAPIs
+﻿using JobLibrary;
+
+namespace WebsiteAPIs
 {
     public class FileJob
     {

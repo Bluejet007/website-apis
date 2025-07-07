@@ -3,6 +3,7 @@ using ImageFilters.Common;
 using ImageFilters.Kuwahara;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using JobLibrary;
 
 namespace ImageFilters;
 
