@@ -363,3 +363,8 @@ MigrationBackup/
 FodyWeavers.xsd
 /ArticlesAPI/appsettings.json
 /ArticlesAPI/appsettings.Development.json
+/ImageFilters/Properties/serviceDependencies.json
+/ImageFilters/Properties/serviceDependencies.ImageFilters.json
+/ImageFilters/Properties/serviceDependencies.local.json
+/ImageFilters/Properties/ServiceDependencies/ImageFilters/appInsights1.arm.json
+/ImageFilters/Properties/ServiceDependencies/ImageFilters/storage1.arm.json

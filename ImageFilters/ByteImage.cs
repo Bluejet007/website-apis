@@ -46,7 +46,7 @@ namespace ImageFilters
 
         public ByteImage(Stream stream)
         {
-            Bitmap bmp = new Bitmap(stream);
+            Bitmap bmp = new(stream);
             this.Format = bmp.PixelFormat;
             this.Type = bmp.RawFormat;
 

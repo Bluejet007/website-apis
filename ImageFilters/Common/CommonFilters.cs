@@ -6,7 +6,7 @@ namespace ImageFilters.Common
     {
         public static ByteImage GreyScale(ByteImage linRgbImage)
         {
-            ByteImage valueImage = new ByteImage(linRgbImage.Height, linRgbImage.Width, linRgbImage.Type, PixelFormat.Format24bppRgb);
+            ByteImage valueImage = new(linRgbImage.Height, linRgbImage.Width, linRgbImage.Type, PixelFormat.Format24bppRgb);
 
             for(int i = linRgbImage.Pixels.GetLowerBound(0); i < linRgbImage.Pixels.GetUpperBound(0) + 1; i++)
             {

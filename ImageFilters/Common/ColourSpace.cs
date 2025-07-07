@@ -4,7 +4,7 @@
     {
         public static ByteImage SrgbToLinear(ByteImage srgbImage)
         {
-            ByteImage linRgbImage = new ByteImage(srgbImage, false);
+            ByteImage linRgbImage = new(srgbImage, false);
 
             for (int i = srgbImage.Pixels.GetLowerBound(0); i < srgbImage.Pixels.GetUpperBound(0) + 1; i++)
             {
@@ -38,7 +38,7 @@
 
         public static ByteImage LinearToSrgb(ByteImage linRgbImage)
         {
-            ByteImage srgbImage = new ByteImage(linRgbImage, false);
+            ByteImage srgbImage = new(linRgbImage, false);
 
             for (int i = linRgbImage.Pixels.GetLowerBound(0); i < linRgbImage.Pixels.GetUpperBound(0) + 1; i++)
             {

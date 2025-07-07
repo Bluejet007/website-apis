@@ -5,11 +5,11 @@ namespace ImageFilters.Kuwahara
 {
     internal class KuwaharaFilters
     {
-        public static ByteImage BaseKuwahara(ByteImage linRgbImage, byte subKernelSize, ILogger<JobProcessor> logger)
+        public static ByteImage BaseKuwahara(ByteImage linRgbImage, byte subKernelSize, ILogger<JobProcessor>? logger = null)
         {
             byte[,] valueArr = CommonFilters.ByteGreyScale(linRgbImage);
 
-            logger.LogInformation("Creating means");
+            logger?.LogInformation("Creating means");
             KernelMap meanMap = new(valueArr.GetLength(0), valueArr.GetLength(1), subKernelSize, (i, j) =>
             {
                 uint mean = 0;
@@ -27,9 +27,9 @@ namespace ImageFilters.Kuwahara
 
                 return (byte)(mean / (subKernelSize * subKernelSize));
             });
-            logger.LogInformation("Means completed");
+            logger?.LogInformation("Means completed");
 
-            logger.LogInformation("Creating variances");
+            logger?.LogInformation("Creating variances");
             KernelMap varianceMap = new(valueArr.GetLength(0), valueArr.GetLength(1), subKernelSize, (i, j) =>
             {
                 int mean = meanMap.Get(i, j);
@@ -49,11 +49,11 @@ namespace ImageFilters.Kuwahara
 
                 return (int)(variance / (subKernelSize * subKernelSize));
             });
-            logger.LogInformation("Variances completed");
+            logger?.LogInformation("Variances completed");
 
-            logger.LogInformation("Creating final means");
+            logger?.LogInformation("Creating final means");
             ByteImage linFinalImage = GetMeanImage(linRgbImage, varianceMap, subKernelSize);
-            logger.LogInformation("Final means made");
+            logger?.LogInformation("Final means made");
 
             return linFinalImage;
         }
@@ -92,26 +92,9 @@ namespace ImageFilters.Kuwahara
             return linResImage;
         }
 
-        private static uint GetQuadrantSum(ByteImage image, int i, int j, byte channelIndex, int size)
+        private static uint GetQuadrantSum(ByteImage image, int i, int j, byte channelIndex, int height, int? width = null)
         {
-            uint sum = 0;
-
-            for (int p = i; p < i + size; p++)
-            {
-                for (int q = j; q < j + size; q++)
-                {
-                    int a = KernelMap.BoundReflected(p, image.Height);
-                    int b = KernelMap.BoundReflected(q, image.Width);
-
-                    sum += image.Pixels[a, b, channelIndex];
-                }
-            }
-
-            return sum;
-        }
-
-        private static uint GetQuadrantSum(ByteImage image, int i, int j, byte channelIndex, int height, int width)
-        {
+            width ??= height;
             uint sum = 0;
 
             for (int p = i; p < i + height; p++)
