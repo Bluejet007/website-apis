@@ -1,9 +1,9 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Queues;
+using Azure.Storage.Sas;
 using JobLibrary;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.StaticFiles;
 using System.Text.Json;
 
 namespace WebsiteAPIs.Controllers
@@ -12,66 +12,67 @@ namespace WebsiteAPIs.Controllers
     [ApiController]
     public class FileJobsController : ControllerBase
     {
-        private readonly HashSet<string> supportedFileTypes = new HashSet<string> { ".png", ".jpg", ".jpeg", "image/png", "image/jpg", "image/jpeg"};
 
         private readonly BlobContainerClient inputContainerClient;
         private readonly BlobContainerClient outputContainerClient;
+
         private readonly QueueClient queueClient;
+
+        private readonly BlobSasBuilder blobSasBuilder;
 
         public FileJobsController(BlobServiceClient blobServiceClient, QueueServiceClient queueServiceClient)
         {
             this.inputContainerClient = blobServiceClient.GetBlobContainerClient("inputs");
+            Task t1 = inputContainerClient.CreateIfNotExistsAsync();
             this.outputContainerClient = blobServiceClient.GetBlobContainerClient("outputs");
+            Task t2 = outputContainerClient.CreateIfNotExistsAsync();
 
             this.queueClient = queueServiceClient.GetQueueClient("image-jobs");
+            Task t3 = queueClient.CreateIfNotExistsAsync();
+
+            this.blobSasBuilder = new
+            (
+                BlobSasPermissions.PermanentDelete | BlobSasPermissions.Read,
+                DateTime.UtcNow + TimeSpan.FromHours(1)
+            );
+
+            Task.WaitAll(t1, t2, t3);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetJobResult(string id)
         {
-            FileExtensionContentTypeProvider typeProvider = new FileExtensionContentTypeProvider();
 
             // Validate id
             if (ValidateGetRequest(id, out string errorMessage))
             {
                 return this.ValidationProblem(errorMessage);
             }
+            
+            // Get blob client
+            BlobClient blobClient = outputContainerClient.GetBlobClient(id);
 
             // Check if output file is ready
-            if (!outputContainerClient.GetBlobClient(id).Exists())
+            if (!await blobClient.ExistsAsync())
             {
                 return this.Accepted();
             }
 
-            // Get blob
-            BlobClient client = outputContainerClient.GetBlobClient(id);
-            BlobDownloadResult blobDownload;
-            try
-            {
-                blobDownload = await client.DownloadContentAsync();
-            } catch(Exception ex)
-            {
-                return this.NotFound(ex);
-            }
+            // Get content type and return
+            Task<Azure.Response<BlobProperties>> blobPropsTask = blobClient.GetPropertiesAsync();
 
-            // Return file
-            if (!typeProvider.TryGetContentType(client.Name, out string? mimeType))
-            {
-                mimeType = blobDownload.Details.ContentType;
-            }
-
-            return this.File(blobDownload.Content.ToStream(), mimeType, client.Name, true);
+            return this.File(blobClient.GenerateSasUri(blobSasBuilder).ToString(), blobPropsTask.Result.Value.ContentType, true);
         }
 
         // Validate get request
-        bool ValidateGetRequest(string id, out string errorMessage)
+        private static bool ValidateGetRequest(string id, out string errorMessage)
         {
             if (String.IsNullOrEmpty(id)) // Check if id provided
             {
                 errorMessage = "No id provided.";
                 return false;
             }
-            else if (!supportedFileTypes.Contains(Path.GetExtension(id))) // Check if id represents a support file type
+            else if (!SupportedFileTypes.fileTypes.Contains(Path.GetExtension(id))) // Check if id represents a support file type
             {
                 errorMessage = "Id is not a supported image.";
                 return false;
@@ -95,34 +96,34 @@ namespace WebsiteAPIs.Controllers
 
             // Create blob
             string fileName = Guid.NewGuid().ToString() + Path.GetExtension(job.File!.FileName);
-            await inputContainerClient.CreateIfNotExistsAsync();
             BlobClient blobClient = inputContainerClient.GetBlobClient(fileName);
 
-            // Upload file to blob
-            using(Stream stream = job.File.OpenReadStream())
+            using (Stream stream = job.File.OpenReadStream())
             {
-                await blobClient.UploadAsync(stream);
+                // Upload file to blob
+                Task uploadTask = blobClient.UploadAsync(stream);
+
+                // Construct requet message
+                QueuedJob queuedJob = new(fileName, job.JobType, job.Parameters);
+                string queueMessage = JsonSerializer.Serialize(queuedJob, queuedJob.GetType());
+
+                // Push request message to queue
+                await uploadTask;
+                await queueClient.SendMessageAsync(queueMessage);
             }
-
-            // Construct requet message
-            QueuedJob queuedJob = new QueuedJob(fileName, job.JobType, job.Parameters);
-            string queueMessage = JsonSerializer.Serialize(queuedJob, queuedJob.GetType());
-
-            // Push request message to queue
-            await queueClient.SendMessageAsync(queueMessage);
 
             return this.Ok(new {id = fileName});
         }
 
         // Validate post request
-        bool ValidatePostRequest(FileJob job, out string errorMessage)
+        private static bool ValidatePostRequest(FileJob job, out string errorMessage)
         {
             if (job.File.Length == 0) // Check if file provided
             {
                 errorMessage = "No file provided.";
                 return false;
             }
-            else if (!supportedFileTypes.Contains(Path.GetExtension(job.File.ContentType))) // Check if file is supported
+            else if (!SupportedFileTypes.fileTypes.Contains(Path.GetExtension(job.File.ContentType))) // Check if file is supported
             {
                 errorMessage = "File is not a supported image.";
                 return false;
