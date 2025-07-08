@@ -4,9 +4,8 @@ namespace WebsiteAPIs
 {
     public class FileJob
     {
-
-        public string? Id { get; set; }
-        public IFormFile? File {  get; set; }
-        public JobType JobType { get; set; }
+        public required IFormFile File { get; set; }
+        public required JobType JobType { get; set; }
+        public int[]? Parameters { get; set; }
     }
 }

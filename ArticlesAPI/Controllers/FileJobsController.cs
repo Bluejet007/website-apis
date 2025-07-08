@@ -1,8 +1,11 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Queues;
+using JobLibrary;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
+using System.Text.Json;
 
 namespace WebsiteAPIs.Controllers
 {
@@ -11,14 +14,17 @@ namespace WebsiteAPIs.Controllers
     public class FileJobsController : ControllerBase
     {
         private readonly HashSet<string> supportedFileTypes = new HashSet<string> { ".png", ".jpg", ".jpeg", "image/png", "image/jpg", "image/jpeg"};
-        private readonly HashSet<string> supportedJobTypes = new HashSet<string> { "kuwa" };
+
         private readonly BlobContainerClient inputContainerClient;
         private readonly BlobContainerClient outputContainerClient;
+        private readonly QueueClient queueClient;
 
-        public FileJobsController(BlobServiceClient client)
+        public FileJobsController(BlobServiceClient blobServiceClient, QueueServiceClient queueServiceClient)
         {
-            this.inputContainerClient = client.GetBlobContainerClient("inputs");
-            this.outputContainerClient = client.GetBlobContainerClient("outputs");
+            this.inputContainerClient = blobServiceClient.GetBlobContainerClient("inputs");
+            this.outputContainerClient = blobServiceClient.GetBlobContainerClient("outputs");
+
+            this.queueClient = queueServiceClient.GetQueueClient("image-jobs");
         }
 
         [HttpGet("{id}")]
@@ -98,6 +104,14 @@ namespace WebsiteAPIs.Controllers
             {
                 await blobClient.UploadAsync(stream);
             }
+
+            // Construct requet message
+            QueuedJob queuedJob = new QueuedJob(fileName, job.JobType, job.Parameters);
+            string queueMessage = JsonSerializer.Serialize(queuedJob, queuedJob.GetType());
+
+            // Push request message to queue
+            await queueClient.SendMessageAsync(queueMessage);
+
             return this.Ok(new {id = fileName});
         }
 

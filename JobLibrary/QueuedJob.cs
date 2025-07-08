@@ -4,13 +4,20 @@ namespace JobLibrary
 {
     public class QueuedJob
     {
+        public QueuedJob(string fileName, JobType jobType, int[]? parameters)
+        {
+            this.FileName = fileName;
+            this.JobType = jobType;
+            this.Parameters = parameters ?? Array.Empty<int>();
+        }
+
         [JsonPropertyName("fileName")]
-        public required string FileName { get; set; }
+        public string FileName { get; set; }
 
         [JsonPropertyName("jobType")]
-        public required JobType JobType { get; set; }
+        public JobType JobType { get; set; }
 
         [JsonPropertyName("parameters")]
-        public required int[] Parameters { get; set; }
+        public int[] Parameters { get; set; }
     }
 }
