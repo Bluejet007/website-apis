@@ -9,16 +9,16 @@ namespace WebsiteAPIs.Controllers
     [ApiController]
     public class ArticlesController : ControllerBase
     {
-        private readonly Container container;
+        private readonly Container cosmosContainer;
         public ArticlesController(CosmosClient client)
         {
-            this.container = client.GetContainer("articles", "articlescontainer");
+            this.cosmosContainer = client.GetContainer("articles", "articlescontainer");
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAllArticles()
         {
-            IOrderedQueryable<Article> queryableArticles = this.container.GetItemLinqQueryable<Article>();
+            IOrderedQueryable<Article> queryableArticles = this.cosmosContainer.GetItemLinqQueryable<Article>();
             FeedIterator<Article> feed = queryableArticles.ToFeedIterator();
             
             List<Article> articles = new List<Article>();
@@ -42,7 +42,7 @@ namespace WebsiteAPIs.Controllers
 
             try
             {
-                response = await this.container.ReadItemAsync<Article>(id, new PartitionKey(id));
+                response = await this.cosmosContainer.ReadItemAsync<Article>(id, new PartitionKey(id));
             }
             catch (CosmosException ex)
             {
@@ -58,12 +58,12 @@ namespace WebsiteAPIs.Controllers
         [HttpPost]
         public async Task<IActionResult> PostArticle(Article article)
         {
-            ItemResponse<Article>? response = null;
+            ItemResponse<Article>? response;
 
             try
             {
                 article.Id = Guid.NewGuid().ToString();
-                response = await this.container.CreateItemAsync(article);
+                response = await this.cosmosContainer.CreateItemAsync(article);
             }
             catch (CosmosException)
             {
@@ -76,11 +76,11 @@ namespace WebsiteAPIs.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteArticle(string id)
         {
-            ItemResponse<Article>? response = null;
+            ItemResponse<Article>? response;
 
             try
             {
-                response = await this.container.DeleteItemAsync<Article>(id, new PartitionKey(id));
+                response = await this.cosmosContainer.DeleteItemAsync<Article>(id, new PartitionKey(id));
             }
             catch (CosmosException)
             {

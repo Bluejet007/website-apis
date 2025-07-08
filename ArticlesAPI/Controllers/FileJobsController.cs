@@ -1,6 +1,5 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
 using Azure.Storage.Queues;
 using JobLibrary;
 using Microsoft.AspNetCore.Mvc;
@@ -39,7 +38,7 @@ namespace WebsiteAPIs.Controllers
             }
 
             // Check if output file is ready
-            if (!outputContainerClient.GetBlockBlobClient(id).Exists())
+            if (!outputContainerClient.GetBlobClient(id).Exists())
             {
                 return this.Accepted();
             }
@@ -79,7 +78,7 @@ namespace WebsiteAPIs.Controllers
             }
             else // Return as valid
             {
-                errorMessage = "";
+                errorMessage = String.Empty;
                 return true;
             }
         }
@@ -118,7 +117,7 @@ namespace WebsiteAPIs.Controllers
         // Validate post request
         bool ValidatePostRequest(FileJob job, out string errorMessage)
         {
-            if (job.File == null || job.File.Length == 0) // Check if file provided
+            if (job.File.Length == 0) // Check if file provided
             {
                 errorMessage = "No file provided.";
                 return false;
@@ -128,14 +127,14 @@ namespace WebsiteAPIs.Controllers
                 errorMessage = "File is not a supported image.";
                 return false;
             }
-            else if (job.File.Length > 25 * 1024 * 1024) // Check is file size is greater than 25MB
+            else if (job.File.Length > 25 * 1024 * 1024) // Check if file size is greater than 25MB
             {
                 errorMessage = "File size is too large (> 25MB).";
                 return false;
             }
             else // Return as valid
             {
-                errorMessage = "";
+                errorMessage = String.Empty;
                 return true;
             }
         }

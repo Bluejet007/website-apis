@@ -1,3 +1,4 @@
+using Azure.Storage.Queues;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Azure;
 
@@ -17,9 +18,12 @@ namespace WebsiteAPIs
             builder.Services.AddSwaggerGen();
             builder.Services.AddAzureClients(clBuilder =>
             {
-                clBuilder.AddBlobServiceClient(builder.Configuration.GetValue<String>("Storage:connectionString"));
-                clBuilder.AddQueueServiceClient(builder.Configuration.GetValue<String>("Storage:connectionString"));
-                clBuilder.AddClient((CosmosClientOptions op) => new CosmosClient(builder.Configuration.GetValue<String>("Cosmos:connectionString")));
+                clBuilder.AddBlobServiceClient(builder.Configuration.GetValue<string>("Storage:connectionString"));
+
+                clBuilder.AddQueueServiceClient(builder.Configuration.GetValue<string>("Storage:connectionString"))
+                .ConfigureOptions(op => op.MessageEncoding = QueueMessageEncoding.Base64);
+
+                clBuilder.AddClient((CosmosClientOptions op) => new CosmosClient(builder.Configuration.GetValue<string>("Cosmos:connectionString")));
             });
 
             var app = builder.Build();
