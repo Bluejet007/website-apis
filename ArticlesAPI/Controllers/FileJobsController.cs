@@ -42,45 +42,24 @@ namespace WebsiteAPIs.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetJobResult(string id)
         {
-
-            // Validate id
-            if (ValidateGetRequest(id, out string errorMessage))
+            // Search blobs
+            await foreach(BlobItem blobItem in outputContainerClient.GetBlobsAsync(prefix: id))
             {
-                return this.ValidationProblem(errorMessage);
+                id = blobItem.Name;
+                break;
             }
-            
+
             // Get blob client
             BlobClient blobClient = outputContainerClient.GetBlobClient(id);
 
             // Check if output file is ready
-            if (!await blobClient.ExistsAsync())
+            if (!SupportedFileTypes.Contains(Path.GetExtension(id)) || !await blobClient.ExistsAsync())
             {
-                return this.Accepted();
+                return this.Accepted("Result not present right now");
             }
-
-            // Get content type and return
-            Task<Azure.Response<BlobProperties>> blobPropsTask = blobClient.GetPropertiesAsync();
-
-            return this.File(blobClient.GenerateSasUri(blobSasBuilder).ToString(), blobPropsTask.Result.Value.ContentType, true);
-        }
-
-        // Validate get request
-        private static bool ValidateGetRequest(string id, out string errorMessage)
-        {
-            if (String.IsNullOrEmpty(id)) // Check if id provided
+            else
             {
-                errorMessage = "No id provided.";
-                return false;
-            }
-            else if (!SupportedFileTypes.fileTypes.Contains(Path.GetExtension(id))) // Check if id represents a support file type
-            {
-                errorMessage = "Id is not a supported image.";
-                return false;
-            }
-            else // Return as valid
-            {
-                errorMessage = String.Empty;
-                return true;
+                return this.Ok(blobClient.GenerateSasUri(blobSasBuilder).AbsoluteUri);
             }
         }
 
@@ -95,8 +74,8 @@ namespace WebsiteAPIs.Controllers
             }
 
             // Create blob
-            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(job.File!.FileName);
-            BlobClient blobClient = inputContainerClient.GetBlobClient(fileName);
+            string fileName = Guid.NewGuid().ToString();
+            BlobClient blobClient = inputContainerClient.GetBlobClient(fileName + Path.GetExtension(job.File!.FileName));
 
             using (Stream stream = job.File.OpenReadStream())
             {
@@ -104,7 +83,7 @@ namespace WebsiteAPIs.Controllers
                 Task uploadTask = blobClient.UploadAsync(stream);
 
                 // Construct requet message
-                QueuedJob queuedJob = new(fileName, job.JobType, job.Parameters);
+                QueuedJob queuedJob = new(fileName + Path.GetExtension(job.File!.FileName), job.JobType, job.Parameters);
                 string queueMessage = JsonSerializer.Serialize(queuedJob, queuedJob.GetType());
 
                 // Push request message to queue
@@ -112,7 +91,7 @@ namespace WebsiteAPIs.Controllers
                 await queueClient.SendMessageAsync(queueMessage);
             }
 
-            return this.Ok(new {id = fileName});
+            return this.Ok(fileName);
         }
 
         // Validate post request
@@ -123,7 +102,7 @@ namespace WebsiteAPIs.Controllers
                 errorMessage = "No file provided.";
                 return false;
             }
-            else if (!SupportedFileTypes.fileTypes.Contains(Path.GetExtension(job.File.ContentType))) // Check if file is supported
+            else if (!SupportedFileTypes.Contains(Path.GetExtension(job.File.ContentType))) // Check if file is supported
             {
                 errorMessage = "File is not a supported image.";
                 return false;
