@@ -32,7 +32,7 @@ namespace WebsiteAPIs.Controllers
 
             this.blobSasBuilder = new
             (
-                BlobSasPermissions.PermanentDelete | BlobSasPermissions.Read,
+                BlobSasPermissions.Delete | BlobSasPermissions.PermanentDelete | BlobSasPermissions.Read,
                 DateTime.UtcNow + TimeSpan.FromHours(1)
             );
 
@@ -53,7 +53,7 @@ namespace WebsiteAPIs.Controllers
             BlobClient blobClient = outputContainerClient.GetBlobClient(id);
 
             // Check if output file is ready
-            if (!SupportedFileTypes.Contains(Path.GetExtension(id)) || !await blobClient.ExistsAsync())
+            if (!SupportedFileTypes.Contains(Path.GetExtension(id).ToLower()) || !await blobClient.ExistsAsync())
             {
                 return this.Accepted("Result not present right now");
             }
@@ -102,7 +102,7 @@ namespace WebsiteAPIs.Controllers
                 errorMessage = "No file provided.";
                 return false;
             }
-            else if (!SupportedFileTypes.Contains(Path.GetExtension(job.File.ContentType))) // Check if file is supported
+            else if (!SupportedFileTypes.Contains(Path.GetExtension(job.File.ContentType).ToLower())) // Check if file is supported
             {
                 errorMessage = "File is not a supported image.";
                 return false;

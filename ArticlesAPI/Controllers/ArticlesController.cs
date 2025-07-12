@@ -73,6 +73,7 @@ namespace WebsiteAPIs.Controllers
             return this.Ok(response?.Resource.Id);
         }
 
+        /*
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteArticle(string id)
         {
@@ -89,5 +90,6 @@ namespace WebsiteAPIs.Controllers
 
             return this.Ok();
         }
+        */
     }
 }
